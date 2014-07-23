@@ -1,85 +1,76 @@
-(ns emotion.scratchpad)
-
-;(let [~@(flatten (map #(vector (first %) (+ foo (second %))) (partition 2 bindings)))]
-
-;; (flatten (map #(vector (first %) (second %)) (partition 2 ['x 1 'y 2])))
-
-;; (defn resolve-input-var [foo v]
-;;   (second v))
-
-;; (defmacro with-foo [foo bindings & body]
-;;   `(let [~foo 5]
-;;      (let [~@(flatten (map #(vector (first %) '('resolve-input-var %)) (partition 2 bindings)))]
-;;        ~@body)))
+(ns emotion.scratchpad
+  (:import (com.fuzzylite.defuzzifier WeightedAverage
+                                      Centroid))
+    (:import (com.fuzzylite.norm.s Maximum)))
 
 
-;; (with-foo z [x 1 y 2]
-;;   z)
-
-;; (macroexpand-1 '(with-foo z [x 1 y 3]
-;;   z))
-
-
-;; (defmacro dbg-2 [& s]
-;;   (list 'let ['a s] (list 'println (list 'quote s) "=" 'a) 'a))
-
-;; (dbg-2 + 3 4)
-(defmacro forloop [[v f t] & body]
-  (let [to (gensym)]
-    (list 'let [to t]
-      (list 'loop [v f]
-            (concat (list* 'when (list '<= v to)
-                   body)
-              (list (list 'recur (list 'inc v))))))))
-
-(macroexpand-1 '(forloop [i 1 (rand 10)]
-  (print i)
-  (print (* i i))))
+;; (defn simple-dimmer [inputs outputs rules]
+;;   (let [engine (make-engine "simple-dimmer"
+;;     (t/resolve-template [:ambient [:dark 0 1 :medium 2 3 :bright 4 5]
+;;                          ] inputs)
+;;     (t/resolve-template [:power [:low 0 1 :medium 2 3 :high 4 5]] outputs)
+;;     rules)
+;;         status (StringBuilder.)
+;;         power (.getOutputVariable engine "power")]
+;;       (set-input engine :ambient 1.09)
+;;       (.configure engine "" "" "AlgebraicProduct" "AlgebraicSum" "Centroid")
+;;       (.setDefuzzifier power (Centroid. 200))
+;;       (.setAccumulation (.fuzzyOutput power) (Maximum.))
+;;       (.setLockValidOutput power false)
+;;       (.setLockOutputRange power false)
+;;       (.setDefaultValue power Double/NaN)
+;;       (.setDefuzzifier (.getOutputVariable engine "power") (Centroid.))
+;;       (.isReady engine status)
+;;       (.process engine)
+;;       (get-output engine :power)))
 
 
-(forloop [i 1 10]
-  (print i)
-  (print (* i i)))
-
-(defmacro forloop2 [[v f t] & body]
-  `(let [to# ~t]
-     (loop [~v ~f]
-       (when (<= ~v to#)
-         ~@body
-         (recur (inc ~v))))))
-
-(clojure.pprint/pprint (macroexpand-1 '(forloop2 [i 1 (rand 10)]
-  (print i)
-  (print (* i i)))))
+;; ;; ;; TODO: Write clojure functions
 
 
-(forloop2 [i 1 10]
-  (print i)
-  (print (* i i)))
-
-(defn forloop-fn2 [] `(let [finish# end]
-     (loop [i 0]
-       (when (< i finish#)
-         (print i)
-         (recur (inc i))))))
-
-(forloop-fn2)
+;; (simple-dimmer [0.0 0.5 0.25 0.75 0.5 1.1]
+;;                [0.0 0.5 0.25 0.75 0.5 1.0]
+;;                [[:ambient :dark] [:power :high]
+;;                 [:ambient :medium] [:power :medium]
+;;                 [:ambient :bright] [:power :low]])
 
 
 
-;; (defmacro with-foo [foo bindings & body]
-;;   `(let ~(into [] (concat [foo 5] (mapcat #(list (first %) (list 'str foo (second %))) (partition 2 bindings))))
-;;     ~@body))
 
-(defmacro with-foo [foo bindings & body]
-  `(let ~(into [] (concat [foo 5] (mapcat #(list (first %) `(str ~foo ~(second %))) (partition 2 bindings))))
-    ~@body))
+;; (defn tipper [inputs outputs rules]
+;;   (let [engine (make-engine "tipper"
+;;     (t/resolve-template [:food [:cheap 0 1 :average 2 3 :good 4 5]
+;;                          :service [:poor 6 7 :average 8 9 :good 10 11]
+;;                          ] inputs)
+;;     (t/resolve-template [:tip [:low 0 1 :medium 2 3 :high 4 5]] outputs)
+;;     rules)
+;;         status (StringBuilder.)
+;;         tip (.getOutputVariable engine "tip")]
+;;       (set-input engine :food 1.0)
+;;       (set-input engine :service 1.0)
+;;       (.configure engine "Minimum" "Maximum" "AlgebraicProduct" "AlgebraicSum" "Centroid")
+;;       (.setDefuzzifier tip (Centroid. 200))
+;;       (.setAccumulation (.fuzzyOutput tip) (Maximum.))
+;;       (.setLockValidOutput tip false)
+;;       (.setLockOutputRange tip false)
+;;       (.setDefaultValue tip Double/NaN)
+;;       (.isReady engine status)
+;;       (.process engine)
+;;       (get-output engine :tip)))
 
 
-(macroexpand-1 '(with-foo z [x 1 y 1] x))
-
-(with-foo z [x 1 y 1] x)
+;; ;; ;; TODO: Write clojure functions
 
 
-(clojure.pprint/pprint (list* 'do (map #(list 'def %) ['i 'j])))
-(clojure.pprint/pprint `(do ~@(map #(list `def %) [`i `j])))
+;; (tipper [-0.1 0.5 0.25 0.75 0.5 1.1
+;;                 -0.1 0.5 0.25 0.75 0.5 1.1]
+;; ;;                 0.0 1.0  0.5 1.5  1.0 2.0]
+;;                [0.0 7.0 6.0 15.0 12.0 30.0]
+;;                [[:food :cheap :service :poor] [:tip :low]
+;;                 [:food :cheap :service :good] [:tip :medium]
+;;                 [:food :average :service :good] [:tip :high],
+;;                 [:food :good :service :average] [:tip :high]
+;;                 [:food :good :service :good] [:tip :high]])
+
+
+

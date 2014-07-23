@@ -7,6 +7,9 @@
   (:import (com.fuzzylite.rule RuleBlock
                                Rule))
   (:import (com.fuzzylite.term Triangle))
+  (:import (com.fuzzylite.norm.t Minimum
+                                 AlgebraicProduct))
+  (:import (com.fuzzylite.norm.s Maximum))
   (:import (java.lang StringBuilder)))
 
 (defn- transpose [l]
@@ -21,7 +24,6 @@
       (.setName (name var-name))
       (.setRange (reduce min froms) (reduce max tos)))
     (doseq [[label from to] ranges]
-      (println (name label))
       (.addTerm iv (Triangle. (name label) from to))) ;; TODO: Allow for dynamic generation using clojure.lang.Reflector.
     (.addInputVariable engine iv)
     iv))
@@ -35,7 +37,7 @@
       (.setName (name var-name))
       (.setRange (reduce min froms) (reduce max tos)))
     (doseq [[label from to] ranges]
-      (println (name label))
+;;       (println (name label))
       (.addTerm iv (Triangle. (name label) from to))) ;; TODO: Allow for dynamic generation using clojure.lang.Reflector.
     (.addOutputVariable engine iv)
     iv))
@@ -71,8 +73,11 @@
 (defn add-rules [engine rules]
   (let [rule-block (RuleBlock.)]
     (doseq [rule rules]
-      (println (rule->str rule))
       (.addRule rule-block (Rule/parse (rule->str rule) engine)))
+;;     (.setConjunction rule-block (Minimum.))
+;;     (.setDisjunction rule-block (Maximum.))
+;;     (.setActivation rule-block (Minimum.))
+;;     (.setName rule-block "default")
     (.addRuleBlock engine rule-block)))
 
 ;; (defmacro def-engine [engine engine-name input-vars output-vars rules]

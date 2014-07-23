@@ -1,24 +1,44 @@
 (ns emotion.core
-  (:use emotion.fuzzy)
-  (:require [emotion.templates :as t]))
+  (:gen-class)
+  (:use emotion.input)
+  (:use emotion.evolution))
 
-(defn simple-dimmer [inputs outputs rules]
-  (let [engine (make-engine "simple-dimmer"
-    (t/resolve-template [:ambient [:dark 0 1 :medium 2 3 :bright 4 5]] inputs)
-    (t/resolve-template [:power [:low 0 1 :medium 2 3 :high 4 5]] outputs)
-    rules)]
-    (doto engine
-      (set-input :ambient 0.5)
-      (.configure "" "" "AlgebraicProduct" "AlgebraicSum" "Centroid")
-      (.process))
-      (get-output engine :power)))
+(def images-dir "/Users/martinb/dev/Avatar/CKDB/CK+/cohn-kanade-images")
+
+(def inputs (doall (aus-inputs images-dir)))
+
+(def input-vars
+  (collect-input-vars inputs))
+
+(def output-vars
+  (keys (emotions)))
+
+(def input-terms [:low :medium :high])
+(def output-terms input-terms)
+
+(def input-templ
+  (variables-template input-vars input-terms))
+
+(def output-templ
+  (variables-template output-vars output-terms))
+
+(def rules-templ
+  (rules-template input-vars output-vars 1))
+
+input-vars
+output-vars
+input-templ
+output-templ
+rules-templ
+(def make-estimator-1 (partial make-estimator input-templ output-templ rules-templ inputs))
 
 
-;; ;; TODO: Write clojure functions
 
+(defn -main []
+;;   (let [population generate-initial-population)
+;;   Generate inital population.
+;;   Create lazy seq using iterate.
+;;   Partition and take pair until converges.
+;;   Show the best rule set and detailed results. Save!
+) ;; Being lazy doesn't pay here.
 
-(simple-dimmer [0.0 0.5 0.25 0.75 0.5 1.0]
-               [0.0 0.5 0.25 0.75 0.5 1.0]
-               [[:ambient :dark]   [:power :high]
-                [:ambient :medium] [:power :medium]
-                [:ambient :bright] [:power :low]])
