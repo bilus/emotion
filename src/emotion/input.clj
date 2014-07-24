@@ -26,3 +26,10 @@
        (filter #(re-matches #"^au_.*" (name %)))
        (into [])))
 
+
+(defn aus-input->input-params
+  [input-vars input]
+  (let [values (->> input
+                    ((apply juxt input-vars))
+                    (map read-string))] ;; TODO: read-string is unsafe
+    (zipmap input-vars values)))

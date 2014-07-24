@@ -1,6 +1,8 @@
 (ns emotion.evolution
   (:use emotion.fuzzy)
+  (:use emotion.debug)
   (:use emotion.examples)
+  (:use emotion.input)
   (:require [emotion.templates :as t])
     (:import (com.fuzzylite.defuzzifier WeightedAverage
                                       Centroid))
@@ -43,25 +45,31 @@
         status (StringBuilder.)]
       (fn [input-params output-vars]
         (doseq [[k v] input-params]
-          (set-input engine k v)
+          (set-input engine k v))
+        (doseq [k output-vars]
           (doto (.getOutputVariable engine (name k))
-            (.setAccumulation (Maximum.))
+            (.. (fuzzyOutput) (setAccumulation (Maximum.)))
             (.setLockValidOutput false)
             (.setLockOutputRange false)
             (.setDefaultValue Double/NaN)
             (.setDefuzzifier (Centroid. 200))))
-
         (.configure engine "Minimum" "Maximum" "AlgebraicProduct" "AlgebraicSum" "Centroid")
         (.isReady engine status)
         (.process engine)
-        (into {} (map #(list % (get-output engine (name %))) output-vars)))))
+        (->> (map #(get-output engine (name %)) output-vars)
+             (zipmap output-vars)))))
 
 
 (defn fitness
-  [estimator aus-inputs solution]
+  [estimator input-vars aus-inputs]
   (let [valid-inputs (remove (comp nil? :emotion) aus-inputs)
         total-distance (->> valid-inputs
-             (map (juxt estimator (comp emotion->map-memo :emotion)))
+             (map
+              (juxt
+               (partial (comp estimator aus-input->input-params) input-vars)
+               (comp emotion->map-memo :emotion)))
+             (dbg)
              (map #(apply emotion-dist %))
              (reduce +))]
     (/ total-distance (count valid-inputs))))
+

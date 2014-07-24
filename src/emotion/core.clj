@@ -1,5 +1,6 @@
 (ns emotion.core
   (:gen-class)
+  (:use emotion.debug)
   (:use emotion.rand)
   (:use emotion.input)
   (:use emotion.evolution)
@@ -34,8 +35,6 @@ input-templ
 output-templ
 rules-templ
 
-(def make-estimator-1 (partial make-estimator input-templ output-templ rules-templ))
-
 
 (defn generate-nums
   [n]
@@ -57,8 +56,6 @@ rules-templ
 
 (defrecord Solution [inputs outputs rules])
 
-
-
 (with-rand-seed 0
   (def solution (Solution.
                  (generate-placeholders input-templ)
@@ -72,13 +69,25 @@ rules-templ
        (flatten)
        (scale-ranges)))
 
-solution
-(:outputs solution)
-(->ranges [1 1 0.0 0.5])
-(->ranges (:inputs solution))
-(->ranges (:outputs solution))
+(def make-estimator-1 (partial make-estimator input-templ output-templ rules-templ))
+
 (def estimator (make-estimator-1 (->ranges (:inputs solution)) (->ranges (:outputs solution)) (:rules solution)))
 
+
+(first inputs)
+
+(estimator (aus-input->input-params input-vars (first inputs)) output-vars)
+
+(estimator )
+
+(clear-log!)
+(fitness estimator input-vars inputs)
+(show-log)
+
+(first inputs)
+(aus-input->input-params (first inputs))
+
+((comp estimator aus-input->input-params) (first inputs))
 (defn -main []
 ;;   (let [population generate-initial-population)
 ;;   Generate inital population.
