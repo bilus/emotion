@@ -54,40 +54,61 @@ rules-templ
         (random-sample values)
         (doall)))) ;; because of with-rand-seed binding
 
-(defrecord Solution [inputs outputs rules])
 
-(with-rand-seed 0
-  (def solution (Solution.
-                 (generate-placeholders input-templ)
-                 (generate-placeholders output-templ)
-                 (generate-placeholders rules-templ (conj output-terms :any)))))
+(defrecord SolutionParams [aus-inputs input-templ output-templ rules-templ input-vars output-vars input-terms output-terms])
+
+(defprotocol EvolvableSolution
+  (fitness [solution])
+  (mutate [solution]))
+
+(defrecord Solution [solution-params inputs outputs rules]
+  EvolvableSolution
+  (fitness [solution]
+     (let [make-estimator-1 (partial make-estimator input-templ output-templ rules-templ)
+           estimator (make-estimator-1 (->ranges (count (:input-vars solution-params)) inputs) (->ranges (count output-vars) outputs) rules)]
+       (calc-fitness estimator (:input-vars solution-params) (:output-vars solution-params) (:aus-inputs solution-params))))
+
+  (mutate [solution] solution))
+
+(defn generate-solution
+  [solution-params]
+    (Solution.
+       solution-params
+       (generate-placeholders input-templ)
+       (generate-placeholders output-templ)
+       (generate-placeholders rules-templ (conj (:output-terms solution-params) :any))))
 
 (defn- ->ranges
-  [input-params]
-  (->> input-params
+  [num-vars params]
+  (->> params
        (make-ranges)
        (flatten)
-       (scale-ranges)))
+       (partition (/ (count params) num-vars))
+       (map scale-ranges)
+       (flatten)))
 
-(def make-estimator-1 (partial make-estimator input-templ output-templ rules-templ))
+(def solution-params (SolutionParams. inputs input-templ output-templ rules-templ input-vars output-vars input-terms output-terms))
+(def solution (generate-solution solution-params))
+(fitness solution)
 
-(def estimator (make-estimator-1 (->ranges (:inputs solution)) (->ranges (:outputs solution)) (:rules solution)))
+;; FIX ERRATIC NullPointerException
+(def solutions (take 5 (map fitness (repeatedly #(generate-solution solution-params)))))
 
+solutions
 
-(first inputs)
+;; WHY THERE ARE NaNS DUE TO IT BEING OUTSIDE THE RANGE?
+;; RUN ESTIMATOR ON ONE INPUT
+;; SEE THE FUZZY LOGIC INPUT/OUTPUT TRIANGLES
 
-(estimator (aus-input->input-params input-vars (first inputs)) output-vars)
+;; TODO: Generate more reasonable ranges.
 
-(estimator )
-
-(clear-log!)
-(fitness estimator input-vars inputs)
+;; (map #(estimator (aus-input->input-params input-vars %) output-vars)(remove (comp nil? :emotion) inputs))
+;; (clear-log!)
+;; (fitness estimator input-vars inputs)
 (show-log)
 
-(first inputs)
-(aus-input->input-params (first inputs))
 
-((comp estimator aus-input->input-params) (first inputs))
+
 (defn -main []
 ;;   (let [population generate-initial-population)
 ;;   Generate inital population.
