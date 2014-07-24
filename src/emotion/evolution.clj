@@ -25,11 +25,19 @@
 
 (def emotion->map-memo (memoize emotion->map))
 
+
 (defn emotion-dist
-  "Returns distance between two emotion maps. Provided values for each emotion is between [0..1] the result also stays in the same range."
+  "Returns distance between two emotion maps. Provided values for each emotion is between [0..1] the result also stays in the same range.
+   A NaN = -1 and its presence deliberately results in an out-of-range result to punish estimators that return NaNs."
+  {:test (examples
+          (emotion-dist {:happy 0} {:happy 0})         ~=> 0.0
+          (emotion-dist {:happy 0} {:happy 1})         ~=> 1.0
+          (emotion-dist {:happy Float/NaN} {:happy 1}) ~=> 4.0)}
   [emotion-map1 emotion-map2]
   {:pre [(> (count emotion-map1) 0) (> (count emotion-map2) 0) (= (count emotion-map1) (count emotion-map2))]}
-  (let [total-error (->> (map - (vals emotion-map1) (vals emotion-map2))
+  (let [get-val #(if (Double/isNaN %) -1 %)
+        get-vals (comp (partial map get-val) vals)
+        total-error (->> (map - (get-vals emotion-map1) (get-vals emotion-map2))
                    (map #(Math/pow % 2))
                    (reduce +))
         num-items (count emotion-map1)]
@@ -60,15 +68,16 @@
              (zipmap output-vars)))))
 
 
-(defn fitness
-  [estimator input-vars aus-inputs]
+(defn calc-fitness
+  [estimator input-vars output-vars aus-inputs]
   (let [valid-inputs (remove (comp nil? :emotion) aus-inputs)
         total-distance (->> valid-inputs
              (map
               (juxt
-               (partial (comp estimator aus-input->input-params) input-vars)
+               #(estimator (aus-input->input-params input-vars %) output-vars)
                (comp emotion->map-memo :emotion)))
-             (dbg)
+        (dbg)
+
              (map #(apply emotion-dist %))
              (reduce +))]
     (/ total-distance (count valid-inputs))))
