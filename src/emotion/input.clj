@@ -1,4 +1,5 @@
 (ns emotion.input
+  (:use emotion.examples)
   (:require [clojure.java.io :as io])
   (:require [clojure.data.json :as json])
   (:require [clojure.walk :only [keywordize-keys] :as walk])
@@ -26,10 +27,21 @@
        (filter #(re-matches #"^au_.*" (name %)))
        (into [])))
 
+(defn- scale-input
+  "Input it aus.txt is in [-1..1] range, we need to scale it to [0..1]"
+  {:test (examples
+          (scale-input 0)  ~=> 0.5
+          (scale-input -1) ~=> 0.0
+          (scale-input 1)  ~=> 1.0)}
+  [value]
+  (-> value
+      (inc)
+      (/ 2)
+      (float)))
 
 (defn aus-input->input-params
   [input-vars input]
   (let [values (->> input
                     ((apply juxt input-vars))
-                    (map read-string))] ;; TODO: read-string is unsafe
+                    (map (comp scale-input read-string)))] ;; TODO: read-string is unsafe
     (zipmap input-vars values)))
