@@ -22,6 +22,7 @@
   (mutate [solution]))
 
 (defn- fitness-1
+  "A helper function to facilitate memoization of fitness."
   [solution-params inputs outputs rules]
   (let [estimator (make-estimator
                   (:input-templ solution-params)
@@ -42,13 +43,19 @@
             (maybe-mutate [v] (if (< (rand) mutation-prob) (mutate v) v))]
     (update-in solution [which] #(map maybe-mutate %)))))
 
+(defn- mutate-rules
+  [solution]
+  solution)
+
 (defrecord Solution [solution-params inputs outputs rules]
   Evolvable
   (fitness [solution]
            (fitness-memo solution-params inputs outputs rules))
 
   (mutate [solution]
-      (mutate-vars (rand-nth [:inputs :outputs]) solution)))
+      (letfn [(mutate-1 [] (mutate-vars (rand-nth [:inputs :outputs]) solution))
+              (mutate-2 [] (mutate-rules solution))]
+        ((rand-nth [mutate-1 mutate-2])))))
 
 (defn generate-solution
   "Generates a solution wih random values for placoholders in templates of input/output variables and fuzzy rules."
