@@ -48,15 +48,15 @@ rules-templ
 ;; FIX ERRATIC NullPointerException
 ;; ADD MUTATION
 
-(def solutions (take 100 (repeatedly #(generate-solution solution-params))))
+;; (def solutions (take 100 (repeatedly #(generate-solution solution-params))))
 
 
-solutions
-(def fitnesses (doall (map fitness solutions)))
+;; solutions
+;; (def fitnesses (doall (map fitness solutions)))
 
-fitnesses
-
-(fitness (first solutions))
+;; fitnesses
+(def solution (generate-solution solution-params))
+(dotimes [n 10] (println (fitness solution)))
 ;; WHY THERE ARE NaNS DUE TO IT BEING OUTSIDE THE RANGE?
 ;; RUN ESTIMATOR ON ONE INPUT
 ;; SEE THE FUZZY LOGIC INPUT/OUTPUT TRIANGLES
