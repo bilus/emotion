@@ -1,5 +1,6 @@
  (ns emotion.fuzzy
   (:require [clojure.string :as s])
+  (:use emotion.debug)
   (:import (com.fuzzylite Engine))
   (:import (com.fuzzylite.variable InputVariable
                                    OutputVariable))
@@ -24,7 +25,7 @@
       (.setName (name var-name))
       (.setRange (reduce min froms) (reduce max tos)))
     (doseq [[label from to] ranges]
-      (.addTerm iv (Triangle. (name label) from to))) ;; TODO: Allow for dynamic generation using clojure.lang.Reflector.
+      (.addTerm iv (Triangle. (name label) from to))) ;; TODO: Allow for dynamic generation using clojure.lang.Reflector to support any term.
     (.addInputVariable engine iv)
     iv))
 
@@ -37,7 +38,6 @@
       (.setName (name var-name))
       (.setRange (reduce min froms) (reduce max tos)))
     (doseq [[label from to] ranges]
-;;       (println (name label))
       (.addTerm iv (Triangle. (name label) from to))) ;; TODO: Allow for dynamic generation using clojure.lang.Reflector.
     (.addOutputVariable engine iv)
     iv))

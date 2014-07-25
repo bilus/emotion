@@ -1,6 +1,7 @@
 (ns emotion.evolution
   (:use emotion.fuzzy)
   (:use emotion.debug)
+  (:use alex-and-georges.debug-repl)
   (:use emotion.examples)
   (:use emotion.input)
   (:require [emotion.templates :as t])
@@ -63,6 +64,7 @@
             (.setDefuzzifier (Centroid. 200))))
         (.configure engine "Minimum" "Maximum" "AlgebraicProduct" "AlgebraicSum" "Centroid")
         (.isReady engine status)
+;;         (debug-repl)
         (.process engine)
         (->> (map #(get-output engine (name %)) output-vars)
              (zipmap output-vars)))))
@@ -76,8 +78,6 @@
               (juxt
                #(estimator (aus-input->input-params input-vars %) output-vars)
                (comp emotion->map-memo :emotion)))
-        (dbg)
-
              (map #(apply emotion-dist %))
              (reduce +))]
     (/ total-distance (count valid-inputs))))

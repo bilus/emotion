@@ -4,7 +4,7 @@
   (:use emotion.rand)
   (:use emotion.input)
   (:use emotion.evolution)
-  (:use emotion.ranges)
+  (:use emotion.solution)
   (:require [emotion.templates :as t]))
 
 (def images-dir "/Users/martinb/dev/Avatar/CKDB/CK+/cohn-kanade-images")
@@ -35,67 +35,28 @@ input-templ
 output-templ
 rules-templ
 
-
-(defn generate-nums
-  [n]
-  (take n (repeatedly rand)))
-
-(defn random-sample
-  [n values]
-  (take n (repeatedly #(rand-nth values))))
-
-(defn generate-placeholders
-  ([template]
-    (-> (t/count-placeholders template)
-        (generate-nums)
-        (doall))) ;; because of with-rand-seed binding
-  ([template values]
-    (-> (t/count-placeholders template)
-        (random-sample values)
-        (doall)))) ;; because of with-rand-seed binding
-
-
-(defrecord SolutionParams [aus-inputs input-templ output-templ rules-templ input-vars output-vars input-terms output-terms])
-
-(defprotocol EvolvableSolution
-  (fitness [solution])
-  (mutate [solution]))
-
-(defrecord Solution [solution-params inputs outputs rules]
-  EvolvableSolution
-  (fitness [solution]
-     (let [make-estimator-1 (partial make-estimator input-templ output-templ rules-templ)
-           estimator (make-estimator-1 (->ranges (count (:input-vars solution-params)) inputs) (->ranges (count output-vars) outputs) rules)]
-       (calc-fitness estimator (:input-vars solution-params) (:output-vars solution-params) (:aus-inputs solution-params))))
-
-  (mutate [solution] solution))
-
-(defn generate-solution
-  [solution-params]
-    (Solution.
-       solution-params
-       (generate-placeholders input-templ)
-       (generate-placeholders output-templ)
-       (generate-placeholders rules-templ (conj (:output-terms solution-params) :any))))
-
-(defn- ->ranges
-  [num-vars params]
-  (->> params
-       (make-ranges)
-       (flatten)
-       (partition (/ (count params) num-vars))
-       (map scale-ranges)
-       (flatten)))
-
-(def solution-params (SolutionParams. inputs input-templ output-templ rules-templ input-vars output-vars input-terms output-terms))
-(def solution (generate-solution solution-params))
-(fitness solution)
-
+(let [n 64]
+  (clear-log!)
+  (with-rand-seed n
+;;     (println n)
+    (def solution-params (->SolutionParams inputs input-templ output-templ rules-templ input-vars output-vars input-terms output-terms))
+    (:input-terms solution-params)
+    (def solution (generate-solution solution-params))
+;;     (def estimator (make-estimator (:input-templ solution-params) (:output-templ solution-params) (:rules-templ solution-params) (:inputs solution) (:outputs solution) (:rules solution)))
+    (fitness solution))
+  (show-log))
 ;; FIX ERRATIC NullPointerException
-(def solutions (take 5 (map fitness (repeatedly #(generate-solution solution-params)))))
+;; ADD MUTATION
+
+(def solutions (take 100 (repeatedly #(generate-solution solution-params))))
+
 
 solutions
+(def fitnesses (doall (map fitness solutions)))
 
+fitnesses
+
+(fitness (first solutions))
 ;; WHY THERE ARE NaNS DUE TO IT BEING OUTSIDE THE RANGE?
 ;; RUN ESTIMATOR ON ONE INPUT
 ;; SEE THE FUZZY LOGIC INPUT/OUTPUT TRIANGLES

@@ -1,5 +1,6 @@
 (ns emotion.templates
   (:use emotion.examples)
+  (:use emotion.rand)
   (:require [clojure.template :as t])
   (:require [clojure.walk :as w]))
 
@@ -51,3 +52,39 @@
                   (terms-template input-vars start 1)
                   (vector %1 (+ start (count input-vars)))))
             outputs (iterate inc 0))))
+
+
+(defn- generate-nums
+  [n]
+  (take n (repeatedly rand)))
+
+(defn- random-sample
+  [n values]
+  (take n (repeatedly #(rand-nth values))))
+
+(defn rand-values
+  "Generate values for placeholders in a template."
+  ([template]
+    (-> (count-placeholders template)
+        (generate-nums)
+        (doall))) ;; because of with-rand-seed binding
+  ([template values]
+    (-> (count-placeholders template)
+        (random-sample values)
+        (doall)))) ;; because of with-rand-seed binding
+
+(defn generate-rules-template-vals
+  "Generate randomly sampled terms for a rules template."
+  {:test (examples
+            (with-rand-seed 0
+              (generate-rules-template-vals [[:in1  0 :in2  1] [:out1  2]
+                                             [:in1  3 :in2  4] [:out1  5]
+                                             [:in1  6 :in2  7] [:out2  8]
+                                             [:in1  9 :in2 10] [:out2 11]]
+                                            [:yes :no]
+                                            [:low :high]) => [:no :no :low :yes :no :high :yes :no :high :no :yes :high]))}
+  [rules-templ input-terms output-terms]
+  (->> (partition 2 rules-templ)
+       (mapcat #(vector (rand-values (first %) input-terms) (rand-values (second %) output-terms)))
+       flatten
+       vec))

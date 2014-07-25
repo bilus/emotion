@@ -1,5 +1,6 @@
 (ns emotion.ranges
-  (:use emotion.examples))
+  (:use emotion.examples)
+  (:use emotion.floats))
 
 (defn- make-range
   [[prev-from prev-to] [from-offset to-offset]]
@@ -29,8 +30,10 @@
           (scale-ranges [0 1 0.5 2]) => [0.0 0.5 0.25 1.0]
           (scale-ranges [0.5 1.5 1 2.5]) ~=> [0 0.5 0.25 1])}
   [ranges]
+  {:post [(not-any? #(float= (reduce - %) 0) (partition 2 %))]}
   (let [min-from (reduce min ranges)
         max-to (reduce max ranges)
         scale #(/ (- % min-from) (- max-to min-from))]
     (map (comp float scale) ranges)))
+
 
