@@ -20,17 +20,23 @@
   (fitness [solution])
   (mutate [solution]))
 
+(defn fitness-1
+  [solution-params inputs outputs rules]
+  (let [estimator (make-estimator
+                  (:input-templ solution-params)
+                  (:output-templ solution-params)
+                  (:rules-templ solution-params)
+                  (->ranges (count (:input-vars solution-params)) inputs)
+                  (->ranges (count (:output-vars solution-params)) outputs)
+                  rules)]
+    (calc-fitness estimator (:input-vars solution-params) (:output-vars solution-params) (:aus-inputs solution-params))))
+
+(def fitness-memo (memoize fitness-1))
+
 (defrecord Solution [solution-params inputs outputs rules]
   Evolvable
   (fitness [solution]
-     (let [estimator (make-estimator
-                        (:input-templ solution-params)
-                        (:output-templ solution-params)
-                        (:rules-templ solution-params)
-                        (->ranges (count (:input-vars solution-params)) inputs)
-                        (->ranges (count (:output-vars solution-params)) outputs)
-                        rules)]
-       (calc-fitness estimator (:input-vars solution-params) (:output-vars solution-params) (:aus-inputs solution-params))))
+           (fitness-memo solution-params inputs outputs rules))
 
   (mutate [solution]
       solution))
