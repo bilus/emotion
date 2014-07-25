@@ -1,5 +1,6 @@
 (ns emotion.rand
-  (:use emotion.examples))
+  (:use emotion.examples)
+  (:use clojure.test))
 
 (def ^:dynamic *rand* clojure.core/rand)
 
