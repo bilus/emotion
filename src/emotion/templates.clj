@@ -9,7 +9,7 @@
   {:test (examples
           (resolve-template [:dark 0 1 :medium 2 3 :bright 4 5] [0.0 0.5 0.25 0.75 0.5 1.0]) => [:dark 0.0 0.5 :medium 0.25 0.75 :bright 0.5 1.0])}
   [expr values]
-  (w/prewalk-replace (zipmap (iterate inc 0) values) expr))
+  (w/prewalk-replace (zipmap (iterate inc 0) (flatten values)) expr))
 
 (defn count-placeholders
   "Counts numbered placeholders in a template."
@@ -67,24 +67,24 @@
   ([template]
     (-> (count-placeholders template)
         (generate-nums)
-        (doall))) ;; because of with-rand-seed binding
+        (doall)
+        vec)) ;; because of with-rand-seed binding
   ([template values]
     (-> (count-placeholders template)
         (random-sample values)
-        (doall)))) ;; because of with-rand-seed binding
+        (doall)
+        vec))) ;; because of with-rand-seed binding
 
 (defn generate-rules-template-vals
   "Generate randomly sampled terms for a rules template."
-  {:test (examples
-            (with-rand-seed 0
-              (generate-rules-template-vals [[:in1  0 :in2  1] [:out1  2]
-                                             [:in1  3 :in2  4] [:out1  5]
-                                             [:in1  6 :in2  7] [:out2  8]
-                                             [:in1  9 :in2 10] [:out2 11]]
-                                            [:yes :no]
-                                            [:low :high]) => [:no :no :low :yes :no :high :yes :no :high :no :yes :high]))}
+  {:test (examples (with-rand-seed 0 (generate-rules-template-vals [[:in1  0 :in2  1] [:out1  2]
+                                                                    [:in1  3 :in2  4] [:out1  5]
+                                                                    [:in1  6 :in2  7] [:out2  8]
+                                                                    [:in1  9 :in2 10] [:out2 11]]
+                                                                   [:yes :no]
+                                                                   [:low :high])) 
+                   => [[:no :no] [:low] [:no :no] [:low] [:no :yes] [:high] [:no :yes] [:low]])}
   [rules-templ input-terms output-terms]
   (->> (partition 2 rules-templ)
        (mapcat #(vector (rand-values (first %) input-terms) (rand-values (second %) output-terms)))
-       flatten
        vec))
