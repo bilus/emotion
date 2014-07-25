@@ -24,3 +24,8 @@
 (clojure.test/deftest test-with-rand-seed ((examples
        (with-rand-seed 4
          (rand)) ~=> 0.7306094)))
+
+(defn rand-between
+  "Generate a random double between and including min and max."
+  [min max]
+  (+ min (rand (- max min))))

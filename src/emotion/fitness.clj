@@ -1,4 +1,4 @@
-(ns emotion.evolution
+(ns emotion.fitness
   (:use emotion.fuzzy)
   (:use emotion.debug)
   (:use alex-and-georges.debug-repl)

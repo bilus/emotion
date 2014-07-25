@@ -3,7 +3,7 @@
   (:use emotion.debug)
   (:use emotion.rand)
   (:use emotion.input)
-  (:use emotion.evolution)
+  (:use emotion.fitness)
   (:use emotion.solution)
   (:require [emotion.templates :as t]))
 
@@ -57,6 +57,10 @@ rules-templ
 ;; fitnesses
 (def solution (generate-solution solution-params))
 (dotimes [n 10] (println (fitness solution)))
+(doseq [solution (doall (take 10 (iterate mutate solution)))]
+  (println (fitness solution)))
+
+
 ;; WHY THERE ARE NaNS DUE TO IT BEING OUTSIDE THE RANGE?
 ;; RUN ESTIMATOR ON ONE INPUT
 ;; SEE THE FUZZY LOGIC INPUT/OUTPUT TRIANGLES

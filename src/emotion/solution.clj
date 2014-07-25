@@ -1,7 +1,8 @@
 (ns emotion.solution
   (:use emotion.examples)
   (:use emotion.ranges)
-  (:use emotion.evolution)
+  (:use emotion.fitness)
+  (:use emotion.rand)
   (:require [emotion.templates :as t]))
 
 
@@ -20,7 +21,7 @@
   (fitness [solution])
   (mutate [solution]))
 
-(defn fitness-1
+(defn- fitness-1
   [solution-params inputs outputs rules]
   (let [estimator (make-estimator
                   (:input-templ solution-params)
@@ -33,13 +34,21 @@
 
 (def fitness-memo (memoize fitness-1))
 
+(defn- mutate-vars 
+  [which solution]
+  (let [mutation-prob 0.05]
+    (letfn [(keep-positive [v] (max 0 v))
+            (mutate [v] (keep-positive (+ v (rand-between -0.1 0.1))))  ; TODO: Make the range configurable using dynamic vars.
+            (maybe-mutate [v] (if (< (rand) mutation-prob) (mutate v) v))]
+    (update-in solution [which] #(map maybe-mutate %)))))
+
 (defrecord Solution [solution-params inputs outputs rules]
   Evolvable
   (fitness [solution]
            (fitness-memo solution-params inputs outputs rules))
 
   (mutate [solution]
-      solution))
+      (mutate-vars (rand-nth [:inputs :outputs]) solution)))
 
 (defn generate-solution
   "Generates a solution wih random values for placoholders in templates of input/output variables and fuzzy rules."
