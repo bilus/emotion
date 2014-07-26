@@ -75,6 +75,13 @@
         (doall)
         vec))) ;; because of with-rand-seed binding
 
+(defn map-rules 
+  "Maps rules template or rules params apply f-ifs to IF clauses (inputs) and f-thens to THEN clauses (outputs)."
+  [f-ifs f-thens rules]
+  (->> (partition 2 rules)
+       (mapcat #(vector (f-ifs (first %)) (f-thens (second %))))
+       vec))
+
 (defn generate-rules-template-vals
   "Generate randomly sampled terms for a rules template."
   {:test (examples (with-rand-seed 0 (generate-rules-template-vals [[:in1  0 :in2  1] [:out1  2]
@@ -85,6 +92,4 @@
                                                                    [:low :high])) 
                    => [[:no :no] [:low] [:no :no] [:low] [:no :yes] [:high] [:no :yes] [:low]])}
   [rules-templ input-terms output-terms]
-  (->> (partition 2 rules-templ)
-       (mapcat #(vector (rand-values (first %) input-terms) (rand-values (second %) output-terms)))
-       vec))
+  (map-rules #(rand-values % input-terms) #(rand-values % output-terms) rules-templ))

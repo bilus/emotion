@@ -37,15 +37,25 @@
 
 (defn- mutate-vars 
   [which solution]
-  (let [mutation-prob 0.05]
+  (let [mutation-prob 0.05] ; TODO: Make it configurable using dynamic vars.
     (letfn [(keep-positive [v] (max 0 v))
             (mutate [v] (keep-positive (+ v (rand-between -0.1 0.1))))  ; TODO: Make the range configurable using dynamic vars.
-            (maybe-mutate [v] (if (< (rand) mutation-prob) (mutate v) v))]
+            (maybe-mutate [v] (rand-if mutation-prob (mutate v) v))]
     (update-in solution [which] #(map maybe-mutate %)))))
 
-(defn- mutate-rules
+(defn mutate-rules
   [solution]
-  solution)
+  (let [rules (:rules solution)
+        input-terms (get-in solution [:solution-params :input-terms])
+        output-terms (get-in solution [:solution-params :output-terms])
+        mutation-prob 0.3] ; TODO: Make it configurable using dynamic vars.    
+    (letfn [(mutate [term possible-terms] (rand-nth (remove #{term} possible-terms)))
+            (maybe-mutate [possible-terms term] (rand-if mutation-prob (mutate term possible-terms) term))]
+      (->> rules
+           (t/map-rules 
+             #(map (partial maybe-mutate input-terms) %) 
+             #(map (partial maybe-mutate output-terms) %))
+           (assoc-in solution [:rules])))))
 
 (defrecord Solution [solution-params inputs outputs rules]
   Evolvable

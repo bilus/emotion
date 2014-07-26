@@ -57,7 +57,7 @@ rules-templ
 ;; fitnesses
 (def solution (generate-solution solution-params))
 (dotimes [n 10] (println (fitness solution)))
-(doseq [solution (doall (take 10 (iterate mutate solution)))]
+(doseq [solution (doall (take 100 (iterate mutate solution)))]
   (println (fitness solution)))
 
 

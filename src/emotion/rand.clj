@@ -29,3 +29,8 @@
   "Generate a random double between and including min and max."
   [min max]
   (+ min (rand (- max min))))
+
+(defmacro rand-if
+  "Evaluate either expr1 (with probability p) or expr2 with probability (1 - p)."
+  [p expr1 expr2]
+  `(if (< (rand) ~p) ~expr1 ~expr2))
