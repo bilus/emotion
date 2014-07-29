@@ -12,7 +12,7 @@
 
 (defn emotions
   []
-  {:happiness 1.0 :anger 0.0 :sadness 0.1 :surprise 0.5 :fear 0.0 :disgust 0.1 :contempt 0.0})
+  {:happiness 1.0 :anger 0.0 :sadness 0.1 :surprise 0.5 :fear 0.0 :disgust 0.1 :contempt 0.2})
 
 (defn estimate-emotion
   [aus-input]
@@ -48,12 +48,12 @@
 (defn make-estimator
   [input-template output-template rules-template inputs outputs rules]
   (let [engine (make-engine "tipper"
-                  (t/resolve-template input-template inputs)
-                  (t/resolve-template output-template outputs)
-                  (t/resolve-template rules-template rules))
+                  (dbg- (t/resolve-template input-template inputs))
+                  (dbg- (t/resolve-template output-template outputs))
+                  (dbg- (t/resolve-template rules-template rules)))
         status (StringBuilder.)]
       (fn [input-params output-vars]
-        (doseq [[k v] input-params]
+        (doseq [[k v] (dbg- input-params)]
           (set-input engine k v))
         (doseq [k output-vars]
           (doto (.getOutputVariable engine (name k))
@@ -66,9 +66,8 @@
         (.isReady engine status)
 ;;         (debug-repl)
         (.process engine)
-        (->> (map #(get-output engine (name %)) output-vars)
-             (zipmap output-vars)))))
-
+        (dbg- (->> (map #(get-output engine (name %)) output-vars)
+             (zipmap output-vars))))))
 
 (defn calc-fitness
   [estimator input-vars output-vars aus-inputs]
@@ -76,7 +75,7 @@
         total-distance (->> valid-inputs
              (map
               (juxt
-               #(estimator (aus-input->input-params input-vars %) output-vars)
+               #(estimator (aus-input->input-params input-vars %) output-vars) 
                (comp emotion->map-memo :emotion)))
              (map #(apply emotion-dist %))
              (reduce +))]

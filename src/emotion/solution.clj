@@ -5,6 +5,7 @@
   (:use emotion.rand)
   (:require [emotion.templates :as t]))
 
+; TODO: Move protocols to lib/.
 
 (defn- ->ranges
   [num-vars params]
@@ -12,14 +13,16 @@
        (make-ranges)
        (flatten)
        (partition (/ (count params) num-vars))
-       (map scale-ranges)
+       (map fit-triangle-ranges)
        (flatten)))
 
-(defrecord SolutionParams [aus-inputs input-templ output-templ rules-templ input-vars output-vars input-terms output-terms])
+(defprotocol SolutionFactory
+  (generate-solution [solution-params]))
 
 (defprotocol Evolvable
   (fitness [solution])
-  (mutate [solution]))
+  (mutate [solution])
+  (crossover [solution1 solution2]))
 
 (defn- fitness-1
   "A helper function to facilitate memoization of fitness."
@@ -38,8 +41,8 @@
 (defn- mutate-vars 
   [which solution]
   (let [mutation-prob 0.05] ; TODO: Make it configurable using dynamic vars.
-    (letfn [(keep-positive [v] (max 0 v))
-            (mutate [v] (keep-positive (+ v (rand-between -0.1 0.1))))  ; TODO: Make the range configurable using dynamic vars.
+    (letfn [(keep-in-range [[min-val max-val] v] (min max-val (max min-val v)))
+            (mutate [v] (keep-in-range [0.1 0.9] (+ v (rand-between -0.1 0.1))))  ; TODO: Make the range configurable using dynamic vars.
             (maybe-mutate [v] (rand-if mutation-prob (mutate v) v))]
     (update-in solution [which] #(map maybe-mutate %)))))
 
@@ -48,7 +51,7 @@
   (let [rules (:rules solution)
         input-terms (get-in solution [:solution-params :input-terms])
         output-terms (get-in solution [:solution-params :output-terms])
-        mutation-prob 0.3] ; TODO: Make it configurable using dynamic vars.    
+        mutation-prob 0.1] ; TODO: Make it configurable using dynamic vars.    
     (letfn [(mutate [term possible-terms] (rand-nth (remove #{term} possible-terms)))
             (maybe-mutate [possible-terms term] (rand-if mutation-prob (mutate term possible-terms) term))]
       (->> rules
@@ -56,6 +59,25 @@
              #(map (partial maybe-mutate input-terms) %) 
              #(map (partial maybe-mutate output-terms) %))
            (assoc-in solution [:rules])))))
+
+(defn swap-halves 
+  "Splits sequences in halves and exchanges the halves."
+  {:test (examples
+           (swap-halves [1 2 3 4] [10 20 30 40]) => [[1 2 30 40] [10 20 3 4]])}
+  [lhs rhs]
+  {:pre [(= (mod (count lhs) 2) (mod (count rhs) 2) 0)    ; Both lhs & rhs are divisible in half.
+         (= (count lhs) (count rhs))]}
+  (let [[lhs-1 lhs-2] (partition (/ (count lhs) 2) lhs)
+        [rhs-1 rhs-2] (partition (/ (count rhs) 2) rhs)]
+    [(concat lhs-1 rhs-2) (concat rhs-1 lhs-2)]))
+
+(defn crossover-vars 
+  [lhs rhs] 
+  (first (swap-halves lhs rhs))) 
+
+(defn crossover-rules 
+  [lhs rhs] 
+  (first (swap-halves lhs rhs))) 
 
 (defrecord Solution [solution-params inputs outputs rules]
   Evolvable
@@ -65,14 +87,24 @@
   (mutate [solution]
       (letfn [(mutate-1 [] (mutate-vars (rand-nth [:inputs :outputs]) solution))
               (mutate-2 [] (mutate-rules solution))]
-        ((rand-nth [mutate-1 mutate-2])))))
-
-(defn generate-solution
-  "Generates a solution wih random values for placoholders in templates of input/output variables and fuzzy rules."
+        ((rand-nth [mutate-1 mutate-2]))))
+  (crossover [solution1 solution2]
+    (let [[lhs rhs] (shuffle [solution1 solution2])]
+      (-> lhs
+          (assoc-in [:inputs] (crossover-vars (:inputs lhs) (:inputs rhs)))
+          (assoc-in [:outputs] (crossover-vars (:outputs lhs) (:outputs rhs)))
+          (assoc-in [:rules] (crossover-rules (:rules lhs) (:rules rhs)))))))
+(defrecord SolutionParams [aus-inputs input-templ output-templ rules-templ input-vars output-vars input-terms output-terms]
+  SolutionFactory
+  (generate-solution
   [solution-params]
-    (Solution.
-       solution-params
-       (t/rand-values (:input-templ solution-params)) ;; TODO: Move to templates to keep the knowledge of the shape of the template in one place.
-       (t/rand-values (:output-templ solution-params)) ;; TODO: Ditto.
-       (t/generate-rules-template-vals (:rules-templ solution-params) (conj (:input-terms solution-params) :any) (:output-terms solution-params)))) ;; TODO: Hard-coded :any.
+  "Generates a solution wih random values for placoholders in templates of input/output variables and fuzzy rules."
+  (Solution.
+     solution-params
+     ;; TODO: Move to templates to keep the knowledge of the shape of the template in one place.
+     (t/rand-values (:input-templ solution-params)) 
+     (t/rand-values (:output-templ solution-params)) ;; TODO: Ditto.
+     (t/generate-rules-template-vals (:rules-templ solution-params) (conj (:input-terms solution-params) :any) (:output-terms solution-params))))) ;; TODO: Hard-coded :any.
+
+
 

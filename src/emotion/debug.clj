@@ -25,3 +25,7 @@
        (dbg-log '~x x#)
        (dbg-print '~x x#)
      x#)))
+
+(defmacro dbg-
+  [x]
+  x)

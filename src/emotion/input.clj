@@ -18,14 +18,19 @@
        (filter #(= (.getName %) "aus.txt"))
        (map #(FileReader. %))
        (map (comp walk/keywordize-keys read-json))
-       (filter #(= (:status %) "ok"))
-))
+       (filter #(= (:status %) "ok"))))
 
 (defn collect-input-vars [inputs]
   (->> (first inputs)
        (keys)
        (filter #(re-matches #"^au_.*" (name %)))
        (into [])))
+
+(defn- tournament-select
+  [population tournament-size]
+  (let [size (count population)]
+    (nth population
+         (apply min (repeatedly tournament-size #(rand-int size))))))
 
 (defn- scale-input
   "Input it aus.txt is in [-1..1] range, we need to scale it to [0..1]"
