@@ -30,7 +30,7 @@
   (t/variables-template output-vars output-terms))
 
 (def rules-templ
-  (t/rules-template input-vars output-vars 1))
+  (t/rules-template input-vars output-vars 3))
 
 input-vars
 output-vars
@@ -64,15 +64,10 @@ rules-templ
           (println "seed = " seed)
           (with-rand-seed seed
             (let [solution-params (->SolutionParams inputs input-templ output-templ rules-templ input-vars output-vars input-terms output-terms)
-                  population (or (load-population (:load opts)) (initial-population solution-params 50))
-                  iterations (iterate evolve population)
-                  capped-iterations (take num-iterations iterations)] 
-                  (doseq [population capped-iterations]
+                  population (or (load-population (:load opts)) (initial-population solution-params 50))]
+                  (doseq [population (take num-iterations (iterate evolve population))]
                     (save-population "intermediate.edn" population)
                     (println [(->> population (map fitness) (reduce min)) 
-                              (count population)]))
-                  (save-population "result.edn" (last capped-iterations)))))))
-      (comment read-string (slurp "result.edn"))
-      
+                              (count population)])))))))      
       
 (clojure.test/run-all-tests #"^emotion.*")
