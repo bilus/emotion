@@ -71,8 +71,10 @@
               )))
 
 (defn add-rules [engine rules]
+  (println "\n\n\nadd-rules")
   (let [rule-block (RuleBlock.)]
     (doseq [rule rules]
+      (println (rule->str rule))
       (.addRule rule-block (Rule/parse (rule->str rule) engine)))
 ;;     (.setConjunction rule-block (Minimum.))
 ;;     (.setDisjunction rule-block (Maximum.))
@@ -90,6 +92,8 @@
 
 
 (defn make-engine [engine-name input-vars output-vars rules]
+  (dbg input-vars)
+  (dbg output-vars)
   (let [engine (Engine. engine-name)]
     (doseq [var (partition 2 input-vars)]
       (add-input-var engine var))

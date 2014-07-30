@@ -1,5 +1,6 @@
 (ns emotion.mama-demo
-    (:use emotion.solution))
+    (:use emotion.solution)
+    (:use emotion.evolution))
 
 (defn- levenshtein [str1 str2]
   (let [len1 (count str1)
@@ -37,13 +38,13 @@
              "HEDC" "NMLK" "DIAB" "MONA" "FEHJ" 
              "CINO"])))) 
 
-(def p (initial-population (MamaParams.) 10))
-; p
+; (def p (initial-population (MamaParams.) 10))
+; ; p
 ; (def iterations (iterate evolve p))
-; (doseq [population (take 100 iterations)]
+; (doseq [population (take 30 iterations)]
 ;   (println [(->> population (map fitness) (reduce +)) 
 ;             (count population)]))
-; (def result (last (take 100 iterations)))
-; result
-; (map #(reduce + (map fitness %)) (take 500 iterations))
-; (map #(vector % (fitness %)) result)
+; (def result (last (take 30 iterations)))
+; (println result)
+; ; (map #(reduce + (map fitness %)) (take 500 iterations))
+; ; (map #(vector % (fitness %)) result)

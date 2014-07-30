@@ -1,5 +1,6 @@
 (ns emotion.input
   (:use emotion.examples)
+  (:use emotion.debug)
   (:require [clojure.java.io :as io])
   (:require [clojure.data.json :as json])
   (:require [clojure.walk :only [keywordize-keys] :as walk])
@@ -10,14 +11,23 @@
   [in]
   (json/read in))
 
+(defn load-aus-input 
+  [path]
+  (->> path
+       (FileReader.)
+       (read-json)
+       (walk/keywordize-keys)))
+
+(defmacro rev [fun & args]
+  (cons fun (reverse args)))
+
 (defn aus-inputs [images-dir]
   "Creates a lazy stream of maps created from aus.txt files read recursively from images-dir. Files are created using BatchTracker/main_seq.rb."
   (->> images-dir
        (io/file)
        (file-seq)
        (filter #(= (.getName %) "aus.txt"))
-       (map #(FileReader. %))
-       (map (comp walk/keywordize-keys read-json))
+       (map #(conj (load-aus-input %) [:fname (.getPath %)]))
        (filter #(= (:status %) "ok"))))
 
 (defn collect-input-vars [inputs]

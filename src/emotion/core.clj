@@ -12,13 +12,13 @@
 (def images-dir "/Users/martinb/dev/Avatar/CKDB/CK+/cohn-kanade-images")
 
 (def inputs (doall (take 400 (aus-inputs images-dir))))
-; (frequencies (map :emotion inputs))
+; (println (map (juxt :fname :emotion) inputs))
 
 (def input-vars
   (collect-input-vars inputs))
 
 (def output-vars
-  (keys (emotions)))
+  (vals (emotions)))
 
 (def input-terms [:low :medium :high])
 (def output-terms input-terms)
@@ -38,20 +38,12 @@ input-templ
 output-templ
 rules-templ
 
-(defn- load-population 
-  [file-name]
-  (when file-name (read-string (slurp file-name))))
-
-(defn- save-population
-  [file-name population]
-  (spit file-name (with-out-str (pr population))))
-
 (defn -main [& args]
   (let [default-seed (System/currentTimeMillis) 
         [opts args banner] (cli args
                                 ["-h" "--help" "Print this help" 
                                   :default false 
-                                  :flag true]
+                                  :flag true] ; TODO: Show help.
                                  ["-l" "--load" "Load solutions from an .edn file and continue evolution"]
                                  ["-s" "--seed" "Set the random number generator seed" 
                                   :default default-seed
@@ -66,7 +58,9 @@ rules-templ
             (let [solution-params (->SolutionParams inputs input-templ output-templ rules-templ input-vars output-vars input-terms output-terms)
                   population (or (load-population (:load opts)) (initial-population solution-params 50))]
                   (doseq [population (take num-iterations (iterate evolve population))]
-                    (save-population "intermediate.edn" population)
+                    (->> population
+                         (sort-by fitness)
+                         (save-population "intermediate.edn"))
                     (println [(->> population (map fitness) (reduce min)) 
                               (count population)])))))))      
       

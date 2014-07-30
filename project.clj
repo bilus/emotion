@@ -12,12 +12,13 @@
                  [org.clojure/tools.cli "0.2.4"]  ; command-line args
 ;;                  [com.taoensso/timbre "3.2.0"]
                  ]        ;; Profiling.
-  :profiles {:dev {:dependencies [[midje "1.5.1"]]}}   ;; Testing.
+  :profiles {
+             :dev {:dependencies [[midje "1.5.1"]]}   ;; Testing.
+             :train {:main emotion.core}
+             :capture {:main emotion.capture}}
+  
+  :aliases {"run-train" ["with-profile" "train" "run"]
+            "run-capture" ["with-profile" "capture" "run"]}
+  
   :plugins [[lein-localrepo "0.5.3"]
-            [quickie "0.2.5"]]
-
-
-;;   :dev-dependencies [[com.stuartsierra/lazytest "1.1.2"]
-;;                    [lein-autotest "1.1.0"]]
-;; :repositories {"stuartsierra-releases" "http://stuartsierra.com/maven2"}
-  )
+            [quickie "0.2.5"]])

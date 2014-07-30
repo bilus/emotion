@@ -3,6 +3,7 @@
   (:use emotion.ranges)
   (:use emotion.fitness)
   (:use emotion.rand)
+  (:use emotion.input)
   (:require [emotion.templates :as t]))
 
 ; TODO: Move protocols to lib/.
@@ -24,16 +25,22 @@
   (mutate [solution])
   (crossover [solution1 solution2]))
 
-(defn- fitness-1
-  "A helper function to facilitate memoization of fitness."
+(defprotocol EmotionCapture
+  (capture-emotions [solution aus-input]))
+
+(defn- make-estimator-1 
   [solution-params inputs outputs rules]
-  (let [estimator (make-estimator
-                  (:input-templ solution-params)
+  (make-estimator (:input-templ solution-params)
                   (:output-templ solution-params)
                   (:rules-templ solution-params)
                   (->ranges (count (:input-vars solution-params)) inputs)
                   (->ranges (count (:output-vars solution-params)) outputs)
-                  rules)]
+                  rules))
+
+(defn- fitness-1
+  "A helper function to facilitate memoization of fitness."
+  [solution-params inputs outputs rules]
+  (let [estimator (make-estimator-1 solution-params inputs outputs rules)]
     (calc-fitness estimator (:input-vars solution-params) (:output-vars solution-params) (:aus-inputs solution-params))))
 
 (def fitness-memo (memoize fitness-1))
@@ -83,7 +90,6 @@
   Evolvable
   (fitness [solution]
            (fitness-memo solution-params inputs outputs rules))
-
   (mutate [solution]
       (letfn [(mutate-1 [] (mutate-vars (rand-nth [:inputs :outputs]) solution))
               (mutate-2 [] (mutate-rules solution))]
@@ -93,7 +99,14 @@
       (-> lhs
           (assoc-in [:inputs] (crossover-vars (:inputs lhs) (:inputs rhs)))
           (assoc-in [:outputs] (crossover-vars (:outputs lhs) (:outputs rhs)))
-          (assoc-in [:rules] (crossover-rules (:rules lhs) (:rules rhs)))))))
+          (assoc-in [:rules] (crossover-rules (:rules lhs) (:rules rhs))))))
+  EmotionCapture
+  (capture-emotions [solution aus-input]
+    (let [estimator (make-estimator-1 solution-params inputs outputs rules)]
+      (estimator (aus-input->input-params (:input-vars solution-params) aus-input) (:output-vars solution-params)))))
+
+
+
 (defrecord SolutionParams [aus-inputs input-templ output-templ rules-templ input-vars output-vars input-terms output-terms]
   SolutionFactory
   (generate-solution
@@ -108,3 +121,10 @@
 
 
 
+(defn load-population 
+  [file-name]
+  (when file-name (read-string (slurp file-name))))
+
+(defn save-population
+  [file-name population]
+  (spit file-name (with-out-str (pr population))))

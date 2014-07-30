@@ -12,15 +12,12 @@
 
 (defn emotions
   []
-  {:happiness 1.0 :anger 0.0 :sadness 0.1 :surprise 0.5 :fear 0.0 :disgust 0.1 :contempt 0.2})
+  {1 :anger 7 :surprise 6 :sadness 4 :fear 3 :disgust 5 :happiness 2 :contempt})
 
-(defn estimate-emotion
-  [aus-input]
-  (emotions))
 
 (defn emotion->map
   [emotion-scalar]
-  (let [emotions {1 :anger 7 :surprise 6 :sadness 4 :fear 3 :disgust 5 :happiness 2 :contempt}
+  (let [emotions (emotions)
         zeroes (into {} (zipmap (vals emotions) (repeat 0.0)))]
     (merge zeroes {(emotions (int emotion-scalar)) 1.0})))
 
@@ -36,14 +33,18 @@
           (emotion-dist {:happy Float/NaN} {:happy 1}) ~=> 4.0)}
   [emotion-map1 emotion-map2]
   {:pre [(> (count emotion-map1) 0) (> (count emotion-map2) 0) (= (count emotion-map1) (count emotion-map2))]}
-  (let [get-val #(if (Double/isNaN %) -1 %)
-        get-vals (comp (partial map get-val) vals)
+  (let [emotions (keys emotion-map1)
+        get-val #(if (Double/isNaN %) -1 %)
+        get-vals #(map get-val ((apply juxt emotions) %))
         total-error (->> (map - (get-vals emotion-map1) (get-vals emotion-map2))
                    (map #(Math/pow % 2))
                    (reduce +))
         num-items (count emotion-map1)]
+    ; (println "----------------------------")    
+    ; (println emotion-map1)
+    ; (println emotion-map2)
+    ; (println total-error)
     (/ total-error num-items)))
-
 
 (defn make-estimator
   [input-template output-template rules-template inputs outputs rules]
@@ -75,9 +76,12 @@
         total-distance (->> valid-inputs
              (map
               (juxt
+               :fname  
                #(estimator (aus-input->input-params input-vars %) output-vars) 
                (comp emotion->map-memo :emotion)))
-             (map #(apply emotion-dist %))
+             ; dbg
+             (map #(apply emotion-dist (drop 1 %)))
              (reduce +))]
+    (clojure.pprint/pprint (map :fname valid-inputs))
     (/ total-distance (count valid-inputs))))
 
