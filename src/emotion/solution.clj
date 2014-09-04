@@ -63,8 +63,9 @@
             (maybe-mutate [possible-terms term] (rand-if mutation-prob (mutate term possible-terms) term))]
       (->> rules
            (t/map-rules 
-             #(map (partial maybe-mutate input-terms) %) 
-             #(map (partial maybe-mutate output-terms) %))
+             (fn [_ templ] (map (partial maybe-mutate input-terms) templ)) 
+             (fn [_ templ] (map (partial maybe-mutate output-terms) templ)))
+             ; (fn [_ templ] templ)) ; Do not touch output terms
            (assoc-in solution [:rules])))))
 
 (defn swap-halves 

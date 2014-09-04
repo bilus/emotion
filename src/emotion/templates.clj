@@ -1,6 +1,7 @@
 (ns emotion.templates
   (:use emotion.examples)
   (:use emotion.rand)
+  (:use emotion.debug)
   (:require [clojure.template :as t])
   (:require [clojure.walk :as w]))
 
@@ -79,7 +80,9 @@
   "Maps rules template or rules params apply f-ifs to IF clauses (inputs) and f-thens to THEN clauses (outputs)."
   [f-ifs f-thens rules]
   (->> (partition 2 rules)
-       (mapcat #(vector (f-ifs (first %)) (f-thens (second %))))
+       (mapcat #(let [i %1 
+                      [ifs thens] %2] 
+                  (vector (f-ifs i ifs) (f-thens i thens))) (iterate inc 0))
        vec))
 
 (defn generate-rules-template-vals
@@ -90,6 +93,10 @@
                                                                     [:in1  9 :in2 10] [:out2 11]]
                                                                    [:yes :no]
                                                                    [:low :high])) 
-                   => [[:no :no] [:low] [:no :no] [:low] [:no :yes] [:high] [:no :yes] [:low]])}
+                   => [[:no :no] [:low] [:yes :no] [:high] [:no :yes] [:low] [:no :yes] [:high]])}
   [rules-templ input-terms output-terms]
-  (map-rules #(rand-values % input-terms) #(rand-values % output-terms) rules-templ))
+  (letfn [(ifs [i templ] 
+               (rand-values templ input-terms))
+          (thens [i templ] 
+                 (vector (nth (cycle output-terms) i)))]
+    (map-rules ifs thens rules-templ))) ; Assumes there's only 1 placeholder per then clause.

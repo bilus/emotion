@@ -30,7 +30,7 @@
   (t/variables-template output-vars output-terms))
 
 (def rules-templ
-  (t/rules-template input-vars output-vars 3))
+  (t/rules-template input-vars output-vars 6))
 
 input-vars
 output-vars
@@ -63,5 +63,6 @@ rules-templ
                          (save-population "intermediate.edn"))
                     (println [(->> population (map fitness) (reduce min)) 
                               (count population)])))))))      
+; Some comment.      
       
 (clojure.test/run-all-tests #"^emotion.*")

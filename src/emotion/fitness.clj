@@ -54,15 +54,16 @@
                   (dbg- (t/resolve-template rules-template rules)))
         status (StringBuilder.)]
       (fn [input-params output-vars]
+        ; (println input-params)
         (doseq [[k v] (dbg- input-params)]
           (set-input engine k v))
         (doseq [k output-vars]
           (doto (.getOutputVariable engine (name k))
             (.. (fuzzyOutput) (setAccumulation (Maximum.)))
-            (.setLockValidOutput false)
-            (.setLockOutputRange false)
+            ; (.setLockValidOutput false)
+            ; (.setLockOutputRange false)
             (.setDefaultValue Double/NaN)
-            (.setDefuzzifier (Centroid. 200))))
+            (.setDefuzzifier (Centroid.))))
         (.configure engine "Minimum" "Maximum" "AlgebraicProduct" "AlgebraicSum" "Centroid")
         (.isReady engine status)
 ;;         (debug-repl)
@@ -82,6 +83,6 @@
              ; dbg
              (map #(apply emotion-dist (drop 1 %)))
              (reduce +))]
-    (clojure.pprint/pprint (map :fname valid-inputs))
+    ; (clojure.pprint/pprint (map :fname valid-inputs))
     (/ total-distance (count valid-inputs))))
 
