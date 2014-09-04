@@ -63,6 +63,6 @@ rules-templ
                          (save-population "intermediate.edn"))
                     (println [(->> population (map fitness) (reduce min)) 
                               (count population)])))))))      
-; Some comment.      
+; Some comment 1.      
       
 (clojure.test/run-all-tests #"^emotion.*")
